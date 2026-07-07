@@ -17,7 +17,9 @@
 
 ```text
 .
+├── SUBMISSION.md                         # 제출용 요약 문구
 ├── docs/agency_emergency_report.md       # 과제용 문서
+├── docs/rag_evaluation.md                # RAG 평가결과
 ├── sql/001_supabase_schema.sql           # Supabase 테이블/RPC 생성 SQL
 ├── src/                                  # RAG, 청킹, API 연동 코드
 ├── scripts/chunk.mjs                     # 문서 청킹
@@ -122,3 +124,7 @@ Advanced RAG:
 사후 평가는 어떤 지표로 하나요?
 재난 대응 훈련에서 AI를 어떻게 활용하나요?
 ```
+
+## 제출 정보
+
+제출용 요약 문구는 `SUBMISSION.md`, 평가결과는 `docs/rag_evaluation.md`에 정리했습니다.
