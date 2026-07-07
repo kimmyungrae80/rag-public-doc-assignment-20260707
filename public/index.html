@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RAG 문서 검색·답변 시스템</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --line: #d7deea;
+      --primary: #1456a0;
+      --primary-strong: #0b3e78;
+      --text: #1d2733;
+      --muted: #66758a;
+      --accent: #e8f1ff;
+      --success: #0f766e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .wrap {
+      width: min(1120px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 24px 0;
+    }
+
+    h1 {
+      margin: 0 0 6px;
+      font-size: 26px;
+      color: var(--primary-strong);
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    main.wrap {
+      display: grid;
+      grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+
+    section {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    textarea,
+    select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 11px 12px;
+      font: inherit;
+      background: #fff;
+      color: var(--text);
+    }
+
+    textarea {
+      min-height: 150px;
+      resize: vertical;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .check {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 16px;
+      border: 0;
+      border-radius: 6px;
+      padding: 12px 14px;
+      background: var(--primary);
+      color: #fff;
+      font: inherit;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      cursor: wait;
+      opacity: 0.7;
+    }
+
+    .answer {
+      white-space: pre-wrap;
+      background: var(--accent);
+      border: 1px solid #c9dcfb;
+      border-radius: 6px;
+      padding: 14px;
+      min-height: 180px;
+    }
+
+    .meta {
+      margin: 12px 0 0;
+      color: var(--success);
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .contexts {
+      margin-top: 16px;
+      display: grid;
+      gap: 10px;
+    }
+
+    .context {
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .context strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--primary-strong);
+    }
+
+    .context p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    @media (max-width: 820px) {
+      main.wrap {
+        grid-template-columns: 1fr;
+      }
+
+      .row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>RAG 기반 문서 검색·답변 시스템</h1>
+      <p class="subtitle">공공기관 재난대응 교육 운영계획 문서를 대상으로 Naive RAG와 Advanced RAG를 비교합니다.</p>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section>
+      <label for="question">질문</label>
+      <textarea id="question">비상연락망 점검 주기는?</textarea>
+
+      <div class="row">
+        <div>
+          <label for="mode">RAG 방식</label>
+          <select id="mode">
+            <option value="advanced">Advanced RAG</option>
+            <option value="naive">Naive RAG</option>
+          </select>
+        </div>
+        <div>
+          <label for="example">예시 질문</label>
+          <select id="example">
+            <option>비상연락망 점검 주기는?</option>
+            <option>교육 대상과 운영 방식은 어떻게 되나요?</option>
+            <option>개인정보가 들어간 훈련 자료는 어떻게 처리해야 하나요?</option>
+            <option>사후 평가는 어떤 지표로 하나요?</option>
+          </select>
+        </div>
+      </div>
+
+      <label class="check">
+        <input id="local" type="checkbox">
+        로컬 검색 모드 사용
+      </label>
+
+      <button id="ask">질문하기</button>
+    </section>
+
+    <section>
+      <label>답변</label>
+      <div id="answer" class="answer">질문을 입력한 뒤 실행하세요.</div>
+      <p id="meta" class="meta"></p>
+      <div id="contexts" class="contexts"></div>
+    </section>
+  </main>
+
+  <script>
+    const question = document.querySelector("#question");
+    const mode = document.querySelector("#mode");
+    const example = document.querySelector("#example");
+    const local = document.querySelector("#local");
+    const ask = document.querySelector("#ask");
+    const answer = document.querySelector("#answer");
+    const meta = document.querySelector("#meta");
+    const contexts = document.querySelector("#contexts");
+
+    example.addEventListener("change", () => {
+      question.value = example.value;
+    });
+
+    ask.addEventListener("click", async () => {
+      ask.disabled = true;
+      answer.textContent = "검색하고 답변을 생성하는 중입니다...";
+      meta.textContent = "";
+      contexts.innerHTML = "";
+
+      try {
+        const response = await fetch("/api/ask", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            question: question.value,
+            mode: mode.value,
+            local: local.checked
+          })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "요청 실패");
+
+        answer.textContent = result.answer;
+        meta.textContent = `${result.mode} / 검색 질의: ${result.retrievalQuery}`;
+        contexts.innerHTML = result.contexts.map((context, index) => {
+          const heading = (context.headingPath || []).join(" > ") || context.id;
+          const score = context.rerankScore ?? context.hybridScore ?? context.similarity ?? 0;
+          const body = context.content.replace(/\s+/g, " ").slice(0, 220);
+          return `<article class="context"><strong>${index + 1}. ${heading}</strong><p>score=${Number(score).toFixed(4)} · ${body}...</p></article>`;
+        }).join("");
+      } catch (error) {
+        answer.textContent = error.message;
+      } finally {
+        ask.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

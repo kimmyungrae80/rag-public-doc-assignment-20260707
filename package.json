@@ -1,0 +1,19 @@
+{
+  "name": "rag-public-doc-assignment",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "RAG 기반 문서 검색·답변 시스템 과제 제출용 프로젝트",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "chunk": "node scripts/chunk.mjs",
+    "seed": "node scripts/seed-supabase.mjs",
+    "ask": "node scripts/ask.mjs",
+    "ask:naive": "node scripts/ask.mjs --mode naive",
+    "ask:advanced": "node scripts/ask.mjs --mode advanced",
+    "start": "node scripts/server.mjs",
+    "demo": "node scripts/chunk.mjs && node scripts/ask.mjs \"비상연락망 점검 주기는?\" --mode advanced --local"
+  }
+}
